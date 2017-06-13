@@ -80,7 +80,7 @@
       
     if (typeof fn === 'string' || fn instanceof String) {
       ref = internString(fn);
-      sref = ref.toString();
+      sref = ref.__base;
       
       var dot = ref.__dot;
       if (dot > -1 && (!logic || logic[sref] === undefined)) {
@@ -90,7 +90,7 @@
           .then(function(d) {
             logic = d;
             ref = ref.__ref || (ref.__ref = internString(ref.slice(dot+1)));
-            sref = ref.toString();
+            sref = ref.__base;
             fullref = (fullref ? fullref+'.' : '')+next;
             return clues(logic,ref,$global,caller,fullref);
           })
