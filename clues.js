@@ -58,7 +58,7 @@
         else {
           s.__base = original;
         }
-        stringIntern[s] = s;
+        stringIntern[original] = s;
       }
       else {
         return internedResults;
@@ -158,9 +158,15 @@
     args = args.map(function(arg) {
         var res, optional = false, showError = false;
 
+
         if (arg instanceof String || typeof arg === 'string') {
           arg = internString(arg);
-          
+
+          let direct = logic[arg];
+          if (direct && typeof direct !== 'function' && !Array.isArray(direct)) {
+            return direct;
+          }
+
           optional = arg.__optional;
           showError = arg.__showError;
           var base = arg.__base;
