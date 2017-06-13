@@ -40,7 +40,7 @@
       if (!internedResults) {
         let removeChars = 0, original = s;
         s = new String(s);
-        //s.__cluesinterned = true;
+        s.__original = original;
         s.__dot = s.search(/ᐅ|\./);
         if (s[0] === '_') {
           s.__optional = true;
@@ -80,7 +80,7 @@
       
     if (typeof fn === 'string' || fn instanceof String) {
       ref = internString(fn);
-      sref = ref.__base;
+      sref = ref.__original;
       
       var dot = ref.__dot;
       if (dot > -1 && (!logic || logic[sref] === undefined)) {
