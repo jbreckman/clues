@@ -17,7 +17,6 @@
       var originalMatch = fn.prototype && fn.prototype.constructor.toString() || fn.toString();
       var argCacheHit = argCache[originalMatch];
       if (argCacheHit) {
-        fn.__args__ = argCacheHit;
         return argCacheHit;
       }
 
@@ -160,12 +159,12 @@
 
 
         if (arg instanceof String || typeof arg === 'string') {
-          arg = internString(arg);
-
           let direct = logic[arg];
           if (direct && typeof direct !== 'function' && !Array.isArray(direct)) {
             return direct;
           }
+
+          arg = internString(arg);
 
           optional = arg.__optional;
           showError = arg.__showError;
