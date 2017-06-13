@@ -35,12 +35,12 @@
   }
 
   function internString(s) {
-    if (!s.__cluesinterned) {
+    if (typeof s === 'string') {
       var internedResults = stringIntern[s];
       if (!internedResults) {
         let removeChars = 0, original = s;
         s = new String(s);
-        s.__cluesinterned = true;
+        //s.__cluesinterned = true;
         s.__dot = s.search(/ᐅ|\./);
         if (s[0] === '_') {
           s.__optional = true;
@@ -67,7 +67,7 @@
   }
 
   function clues(logic,fn,$global,caller,fullref) {
-    var args,ref;
+    var args,ref,sref;
 
     if (!$global) $global = {};
     if (caller) caller = caller.toString();
@@ -80,33 +80,37 @@
       
     if (typeof fn === 'string' || fn instanceof String) {
       ref = internString(fn);
+      sref = ref.toString();
       
       var dot = ref.__dot;
-      if (dot > -1 && (!logic || logic[ref] === undefined)) {
+      if (dot > -1 && (!logic || logic[sref] === undefined)) {
+
         var next = ref.__next || (ref.__next = internString(ref.slice(0,dot)));
         return clues(logic,next,$global,caller,fullref)
           .then(function(d) {
             logic = d;
             ref = ref.__ref || (ref.__ref = internString(ref.slice(dot+1)));
+            sref = ref.toString();
             fullref = (fullref ? fullref+'.' : '')+next;
             return clues(logic,ref,$global,caller,fullref);
           })
           .catch(function(e) {
             if (e && e.notDefined && logic && logic.$external && typeof logic.$external === 'function')
-              return logic[ref] = logic[ref] || clues(logic,function() { return logic.$external.call(logic,ref); },$global,ref,(fullref ? fullref+'.' : '')+ref);
+              return logic[sref] = logic[sref] || clues(logic,function() { return logic.$external.call(logic,ref); },$global,ref,(fullref ? fullref+'.' : '')+ref);
             else throw e;
           });
+
       }
 
       fullref = (fullref ? fullref+'.' : '')+ref;
-      fn = logic ? logic[ref] : undefined;
+      fn = logic ? logic[sref] : undefined;
       if (fn === undefined) {
-        if (typeof(logic) === 'object' && logic !== null && (Object.getPrototypeOf(logic) || {})[ref] !== undefined)
-          fn = Object.getPrototypeOf(logic)[ref];
-        else if ($global[ref] && caller && caller !== '__user__')
+        if (typeof(logic) === 'object' && logic !== null && (Object.getPrototypeOf(logic) || {})[sref] !== undefined)
+          fn = Object.getPrototypeOf(logic)[sref];
+        else if ($global[sref] && caller && caller !== '__user__')
           return clues($global,ref,$global,caller,fullref);
         else if (logic && logic.$property && typeof logic.$property === 'function')
-          fn = logic[ref] = function() { return logic.$property.call(logic,ref); };
+          fn = logic[sref] = function() { return logic.$property.call(logic,ref); };
         else return clues.Promise.reject({ref : ref.toString(), message: ref+' not defined', fullref:fullref,caller: caller, notDefined:true});
       }
     }
@@ -119,7 +123,7 @@
         if (fn.length === 1) fn = fn[0];
         var result = clues(obj,fn,$global,caller,fullref);
         if (ref) {
-          logic[ref] = result;
+          logic[sref] = result;
         }
         return result;
       }
@@ -151,8 +155,8 @@
     args = (args || matchArgs(fn));
 
     // Shortcuts to define empty objects with $property or $external
-    if (fn.name === '$property' || (args.length === 1 && args[0] && args[0].__base === '$property')) return logic[ref] = clues.Promise.resolve({$property: fn.bind(logic)});
-    if (fn.name === '$external' || (args.length === 1 && args[0] && args[0].__base === '$external')) return logic[ref] = clues.Promise.resolve({$external: fn.bind(logic)});
+    if (fn.name === '$property' || (args.length === 1 && args[0] && args[0].__base === '$property')) return logic[sref] = clues.Promise.resolve({$property: fn.bind(logic)});
+    if (fn.name === '$external' || (args.length === 1 && args[0] && args[0].__base === '$external')) return logic[sref] = clues.Promise.resolve({$external: fn.bind(logic)});
     
     args = args.map(function(arg) {
         var res, optional = false, showError = false;
@@ -229,8 +233,8 @@
     value.fn = fn;
 
     if (ref) {
-      logic[ref] = value;
-      if (logic[ref] !== value)
+      logic[sref] = value;
+      if (logic[sref] !== value) {
         return clues.Promise.try(function() {
           Object.defineProperty(logic,ref,{value: value, enumerable: true, configurable: true});
           return value;
@@ -240,6 +244,7 @@
             return clues.Promise.reject({ref : ref.toString(), message: 'Object immutable', fullref:fullref,caller: caller, stack:e.stack, value: value});
           });
         });
+      }
     }
 
     return value;
